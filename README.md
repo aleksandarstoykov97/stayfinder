@@ -1,0 +1,73 @@
+# Stayfinder
+
+Stayfinder is a responsive hotel discovery and booking app. Guests can browse independent stays, filter by destination, save favorites, make reservations, and see their trips. Administrators can upload property cover photos and manage listings.
+
+The app is built with HTML, CSS, vanilla JavaScript, Bootstrap, Vite, and Supabase. Without Supabase credentials it runs in demo mode with sample stays and browser-local reservations. Authentication, database-backed reservations, admin tools, and uploads become active after connecting a Supabase project.
+
+## Screens
+
+- `index.html` — discovery homepage and search
+- `stays.html` — searchable, filterable collection
+- `property.html` — stay details, amenities, and room selection
+- `booking.html` — reservation form and price summary
+- `trips.html` — guest reservations
+- `login.html` — sign in and account creation
+- `admin.html` — role-protected listing and image upload tools
+
+## Architecture
+
+Each HTML file is a Vite multi-page entry. Shared browser code lives in `src/js/`; Supabase access is isolated in `src/js/supabase.js`, sample properties in `src/js/data.js`, and shared responsive styles in `src/app.css`. The browser communicates with Supabase through `@supabase/supabase-js` and its REST/Auth/Storage APIs. There is no custom server or client-side framework.
+
+## Database design
+
+The initial schema is in `supabase/migrations/202611080001_initial_schema.sql`.
+
+```mermaid
+erDiagram
+  AUTH_USERS ||--|| PROFILES : has
+  AUTH_USERS ||--o{ USER_ROLES : assigned
+  PROFILES ||--o{ HOTELS : owns
+  HOTELS ||--o{ ROOMS : contains
+  AUTH_USERS ||--o{ BOOKINGS : makes
+  ROOMS ||--o{ BOOKINGS : reserved
+  HOTELS ||--o{ REVIEWS : receives
+  AUTH_USERS ||--o{ REVIEWS : writes
+```
+
+RLS restricts profile, role, and booking access. Hotel reads are public only for published listings. Admin-only policies manage listings, rooms, roles, and the public `hotel-images` Storage bucket. Database triggers calculate booking totals from the room rate, and an exclusion constraint prevents overlapping active reservations for the same room.
+
+## Local setup
+
+Requirements: Node.js 20.19+ or 22.12+, npm, and optionally a Supabase project.
+
+```sh
+npm install
+npm run dev
+```
+
+Open the local URL printed by Vite. Demo stays and local-only bookings work without Supabase.
+
+To enable Supabase:
+
+1. Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from the Supabase project settings. Never use a service-role key in the browser.
+2. Install the Supabase CLI, authenticate, then link the project with `supabase link --project-ref <project-ref>`.
+3. If the remote database already has schema changes, first sync its history with `supabase db pull`. For a new database, apply this repository's migration with `supabase db push`.
+4. Create an admin user through Supabase Auth, then assign its `admin` role through the Supabase SQL editor. Do not expose the service-role key to the app.
+5. Promote a trusted account by assigning its `admin` role. The admin form uploads a property image and creates its first room before publishing the property.
+
+Run `npm run build` to validate all page entries and create the static deployment bundle in `dist/`.
+
+## Key files
+
+- `vite.config.js` — registers each HTML page as a production entry
+- `src/js/main.js` — shared rendering and page interactions
+- `src/js/data.js` — clearly separated demo properties
+- `src/js/supabase.js` — Supabase client, Auth, booking, and listing services
+- `src/app.css` — shared responsive design system
+- `supabase/migrations/` — versioned database schema and policies
+- `.github/copilot-instructions.md` — project-wide coding and security guidance
+- `.env.example` — required public Supabase configuration names
+
+## Deployment and demo access
+
+The static frontend can be deployed to Netlify or another Vite-compatible host. Set the two `VITE_SUPABASE_*` variables in the host's environment settings and apply the database migration before enabling live accounts. No sample account is included because a real Supabase user must be provisioned; demo browsing works without credentials.
