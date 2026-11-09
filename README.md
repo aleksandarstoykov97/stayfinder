@@ -11,6 +11,7 @@ The app is built with HTML, CSS, vanilla JavaScript, Bootstrap, Vite, and Supaba
 - `property.html` — stay details, amenities, and room selection
 - `booking.html` — reservation form and price summary
 - `trips.html` — guest reservations
+- `saved.html` — stays saved in this browser
 - `login.html` — sign in and account creation
 - `admin.html` — role-protected listing and image upload tools
 

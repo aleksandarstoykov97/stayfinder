@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import { fileURLToPath, URL } from 'node:url';
 
-const pages = ['index', 'stays', 'property', 'booking', 'trips', 'login', 'admin'];
+const pages = ['index', 'stays', 'property', 'booking', 'trips', 'saved', 'login', 'admin'];
 
 export default defineConfig({
   build: {

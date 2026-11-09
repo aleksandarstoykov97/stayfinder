@@ -25,7 +25,7 @@ const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
 let stays = demoStays;
 
 function nav() {
-  return `<header class="site-header"><a class="wordmark" href="index.html"><span class="wordmark-icon"><i class="bi bi-compass-fill"></i></span>stayfinder<span class="wordmark-dot">.</span></a><nav class="main-nav" aria-label="Main navigation"><a class="${page === 'stays' ? 'active' : ''}" href="stays.html">Find a stay</a><a class="${page === 'trips' ? 'active' : ''}" href="trips.html">My trips</a><a class="${page === 'admin' ? 'active' : ''}" href="admin.html">Host tools</a></nav><div class="header-actions"><a class="icon-link" href="trips.html" aria-label="Saved trips"><i class="bi bi-heart"></i></a><a class="sign-in-link" href="login.html">Sign in <i class="bi bi-arrow-up-right"></i></a><button class="menu-toggle" type="button" aria-label="Open menu"><i class="bi bi-list"></i></button></div></header>`;
+  return `<header class="site-header"><a class="wordmark" href="index.html"><span class="wordmark-icon"><i class="bi bi-compass-fill"></i></span>stayfinder<span class="wordmark-dot">.</span></a><nav class="main-nav" aria-label="Main navigation"><a class="${page === 'stays' ? 'active' : ''}" href="stays.html">Find a stay</a><a class="${page === 'trips' ? 'active' : ''}" href="trips.html">My trips</a><a class="${page === 'admin' ? 'active' : ''}" href="admin.html">Host tools</a></nav><div class="header-actions"><a class="icon-link" href="saved.html" aria-label="Saved stays"><i class="bi bi-heart"></i></a><a class="sign-in-link" href="login.html">Sign in <i class="bi bi-arrow-up-right"></i></a><button class="menu-toggle" type="button" aria-label="Open menu"><i class="bi bi-list"></i></button></div></header>`;
 }
 
 function footer() {
@@ -88,6 +88,10 @@ async function tripsView() {
   return `<main class="page-main"><section class="page-intro trips-intro"><div><span class="eyebrow">YOUR JOURNEYS</span><h1>Everywhere you’re going.</h1><p>${session ? `Signed in as ${escapeHtml(session.user.email)}` : 'Your saved and upcoming reservations, all in one place.'}</p></div><a class="button-dark" href="stays.html">Plan a trip <i class="bi bi-arrow-right"></i></a></section><section class="trip-list">${list}</section>${session ? '<button class="text-button" id="sign-out" type="button">Sign out</button>' : '<p class="signin-prompt">Have an account? <a href="login.html">Sign in to sync your trips</a></p>'}</main>`;
 }
 
+function savedView() {
+  return `<main class="page-main"><section class="page-intro"><div><span class="eyebrow">YOUR SHORTLIST</span><h1>Stays worth keeping.</h1><p>Your saved places are stored in this browser.</p></div><a class="text-link" href="stays.html">Explore stays <i class="bi bi-arrow-up-right"></i></a></section><div class="stay-grid results-grid" id="saved-grid"></div></main>`;
+}
+
 function loginView() {
   return `<main class="auth-layout"><section class="auth-image"><div><span class="eyebrow light-eyebrow">A PLACE TO BEGIN</span><h1>Go somewhere<br><em>good.</em></h1></div><span>Casa Verde Lisboa · Príncipe Real</span></section><section class="auth-panel"><span class="eyebrow">WELCOME TO STAYFINDER</span><h2>Make yourself at home.</h2><p>Sign in or create an account to keep your trips close.</p><div class="auth-tabs" role="tablist"><button class="active" type="button" data-auth-mode="signin">Sign in</button><button type="button" data-auth-mode="signup">Create account</button></div><form id="auth-form"><label class="signup-only hidden">Full name<input name="full_name" autocomplete="name" placeholder="Your name"></label><label>Email address<input name="email" type="email" required autocomplete="email" placeholder="you@example.com"></label><label>Password<input name="password" type="password" required minlength="8" autocomplete="current-password" placeholder="At least 8 characters"></label><p class="form-notice" id="auth-message" role="status"></p><button class="button-dark submit-button" type="submit"><span id="auth-submit-label">Sign in</span><i class="bi bi-arrow-right"></i></button></form><p class="auth-note">${isSupabaseConfigured ? 'Your account is protected by Supabase authentication.' : 'Demo browsing is enabled. Connect Supabase to activate accounts.'}</p></section></main>`;
 }
@@ -125,6 +129,15 @@ function renderResults() {
   document.querySelector('#results-grid').innerHTML = visible.length ? visible.map(stayCard).join('') : '<div class="empty-results"><i class="bi bi-search"></i><h2>No stays found just yet.</h2><p>Try a different city or clear the selected filters.</p></div>';
 }
 
+function renderSaved() {
+  const savedGrid = document.querySelector('#saved-grid');
+  if (!savedGrid) return;
+  const savedStays = stays.filter((stay) => getFavorites().includes(stay.id));
+  savedGrid.innerHTML = savedStays.length
+    ? savedStays.map(stayCard).join('')
+    : '<div class="empty-results"><i class="bi bi-heart"></i><h2>Your shortlist is taking shape.</h2><p>Save a stay you like and it will be waiting here.</p><a class="button-dark" href="stays.html">Explore stays <i class="bi bi-arrow-right"></i></a></div>';
+}
+
 function updateBookingTotal() {
   const form = document.querySelector('#booking-form');
   if (!form) return;
@@ -155,12 +168,14 @@ async function render() {
   else if (page === 'property') content = propertyView(stays.find((stay) => stay.id === new URLSearchParams(location.search).get('id')) || getDemoStay(new URLSearchParams(location.search).get('id')));
   else if (page === 'booking') content = bookingView(stays.find((stay) => stay.id === new URLSearchParams(location.search).get('hotel')) || getDemoStay(new URLSearchParams(location.search).get('hotel')));
   else if (page === 'trips') content = await tripsView();
+  else if (page === 'saved') content = savedView();
   else if (page === 'login') content = loginView();
   else if (page === 'admin') content = await adminView();
   else content = homeView();
 
   root.innerHTML = `${nav()}${content}${footer()}`;
   if (page === 'stays') renderResults();
+  if (page === 'saved') renderSaved();
   if (page === 'booking') updateBookingTotal();
   bindEvents();
 }
@@ -171,6 +186,7 @@ function bindEvents() {
     const liked = toggleFavorite(button.dataset.favorite);
     button.classList.toggle('is-favorite', liked);
     button.innerHTML = `<i class="bi bi-heart${liked ? '-fill' : ''}"></i>`;
+    if (page === 'saved' && !liked) renderSaved();
   }));
   ['#filter-destination', '#filter-type', '#filter-sort'].forEach((selector) => document.querySelector(selector)?.addEventListener('input', renderResults));
   document.querySelector('#saved-only')?.addEventListener('click', (event) => {
