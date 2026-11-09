@@ -70,4 +70,6 @@ Run `npm run build` to validate all page entries and create the static deploymen
 
 ## Deployment and demo access
 
-The static frontend can be deployed to Netlify or another Vite-compatible host. Set the two `VITE_SUPABASE_*` variables in the host's environment settings and apply the database migration before enabling live accounts. No sample account is included because a real Supabase user must be provisioned; demo browsing works without credentials.
+The repository includes `netlify.toml` with the Vite build command and `dist/` publish directory. To deploy from a local machine, install the Netlify CLI, authenticate with `netlify login`, link or create a site with `netlify init`, then run `netlify deploy --prod`. Alternatively, connect this GitHub repository in the Netlify dashboard; Netlify will read the build settings from `netlify.toml`.
+
+Set the two `VITE_SUPABASE_*` variables in Netlify's environment settings and apply the database migration before enabling live accounts. Without those settings, the published frontend runs in demo mode. No sample account is included because a real Supabase user must be provisioned.
