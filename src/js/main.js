@@ -182,9 +182,27 @@ async function render() {
 
 function bindEvents() {
   document.querySelector('.menu-toggle')?.addEventListener('click', () => document.querySelector('.main-nav').classList.toggle('is-open'));
+  const searchForm = document.querySelector('#search-form');
+  if (searchForm) {
+    const checkIn = searchForm.elements.checkin;
+    const checkOut = searchForm.elements.checkout;
+    const validateSearchDates = () => {
+      checkOut.min = checkIn.value;
+      const valid = countStayNights(checkIn.value, checkOut.value) > 0;
+      checkOut.setCustomValidity(valid ? '' : 'Choose a check-out date after check-in.');
+    };
+    checkIn.addEventListener('change', validateSearchDates);
+    checkOut.addEventListener('change', validateSearchDates);
+    searchForm.addEventListener('submit', (event) => {
+      validateSearchDates();
+      if (!searchForm.reportValidity()) event.preventDefault();
+    });
+    validateSearchDates();
+  }
   document.querySelectorAll('[data-favorite]').forEach((button) => button.addEventListener('click', () => {
     const liked = toggleFavorite(button.dataset.favorite);
     button.classList.toggle('is-favorite', liked);
+    button.setAttribute('aria-label', `${liked ? 'Remove from' : 'Add to'} saved stays`);
     button.innerHTML = `<i class="bi bi-heart${liked ? '-fill' : ''}"></i>`;
     if (page === 'saved' && !liked) renderSaved();
   }));
