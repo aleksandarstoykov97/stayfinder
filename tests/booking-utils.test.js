@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateStayTotal, countStayNights } from '../src/js/booking-utils.js';
+import { calculateStayTotal, countStayNights, hasBookingConflict } from '../src/js/booking-utils.js';
 
 test('counts nights between checkout dates, excluding checkout day', () => {
   assert.equal(countStayNights('2026-11-09', '2026-11-16'), 7);
@@ -31,4 +31,20 @@ test('rejects invalid rates and night counts', () => {
   assert.equal(calculateStayTotal('invalid', 3), 0);
   assert.equal(calculateStayTotal(184, 0), 0);
   assert.equal(calculateStayTotal(184, 1.5), 0);
+});
+
+test('detects an overlapping booking for the same room', () => {
+  const existing = [{ room_id: 'room-1', check_in: '2026-11-10', check_out: '2026-11-14', status: 'confirmed' }];
+  assert.equal(hasBookingConflict({ room_id: 'room-1', check_in: '2026-11-13', check_out: '2026-11-16' }, existing), true);
+});
+
+test('allows back-to-back bookings and bookings for different rooms', () => {
+  const existing = [{ room_id: 'room-1', check_in: '2026-11-10', check_out: '2026-11-14', status: 'confirmed' }];
+  assert.equal(hasBookingConflict({ room_id: 'room-1', check_in: '2026-11-14', check_out: '2026-11-16' }, existing), false);
+  assert.equal(hasBookingConflict({ room_id: 'room-2', check_in: '2026-11-11', check_out: '2026-11-12' }, existing), false);
+});
+
+test('ignores cancelled reservations when checking availability', () => {
+  const existing = [{ room_id: 'room-1', check_in: '2026-11-10', check_out: '2026-11-14', status: 'cancelled' }];
+  assert.equal(hasBookingConflict({ room_id: 'room-1', check_in: '2026-11-12', check_out: '2026-11-13' }, existing), false);
 });

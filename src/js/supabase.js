@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { hasBookingConflict } from './booking-utils.js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -59,6 +60,7 @@ export async function getSession() {
 export async function createBooking(booking) {
   if (!supabase) {
     const saved = JSON.parse(localStorage.getItem('stayfinder-bookings') || '[]');
+    if (hasBookingConflict(booking, saved)) throw new Error('Those dates are no longer available for this room.');
     const next = { ...booking, id: crypto.randomUUID(), created_at: new Date().toISOString() };
     localStorage.setItem('stayfinder-bookings', JSON.stringify([next, ...saved]));
     return next;
