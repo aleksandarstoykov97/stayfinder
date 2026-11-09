@@ -5,6 +5,7 @@ import { demoStays, getDemoStay } from './data.js';
 import { calculateStayTotal, countStayNights } from './booking-utils.js';
 import {
   createBooking,
+  cancelBooking,
   fetchAdminRole,
   fetchBookings,
   fetchStays,
@@ -83,7 +84,9 @@ async function tripsView() {
     const title = booking.hotel_name || hotel?.name || 'Stayfinder reservation';
     const city = booking.city || hotel?.city || '';
     const image = booking.image || hotel?.cover_image_url || demoStays[0].image;
-    return `<article class="trip-row"><img src="${escapeHtml(image)}" alt="${escapeHtml(title)}"><div class="trip-copy"><span class="eyebrow">${escapeHtml(booking.status || 'CONFIRMED')}</span><h3>${escapeHtml(title)}</h3><p>${escapeHtml(city)} · ${escapeHtml(booking.room_name || booking.rooms?.name || 'Room')}</p></div><div class="trip-date"><span>${escapeHtml(booking.check_in || 'Dates to be confirmed')}</span><strong>${money(booking.total_price || booking.price_per_night)}</strong></div></article>`;
+    const status = booking.status || 'confirmed';
+    const canCancel = status !== 'cancelled' && booking.check_in >= today;
+    return `<article class="trip-row"><img src="${escapeHtml(image)}" alt="${escapeHtml(title)}"><div class="trip-copy"><span class="eyebrow">${escapeHtml(status.toUpperCase())}</span><h3>${escapeHtml(title)}</h3><p>${escapeHtml(city)} · ${escapeHtml(booking.room_name || booking.rooms?.name || 'Room')}</p></div><div class="trip-date"><span>${escapeHtml(booking.check_in || 'Dates to be confirmed')}</span><strong>${money(booking.total_price || booking.price_per_night)}</strong>${canCancel ? `<button class="cancel-booking" type="button" data-cancel-booking="${escapeHtml(booking.id)}">Cancel reservation</button>` : ''}</div></article>`;
   }).join('') : `<div class="empty-state"><span class="empty-icon"><i class="bi bi-suitcase"></i></span><h2>Your next trip is waiting.</h2><p>Once you reserve a stay, you’ll find all the details right here.</p><a class="button-dark" href="stays.html">Find a stay <i class="bi bi-arrow-right"></i></a></div>`;
   return `<main class="page-main"><section class="page-intro trips-intro"><div><span class="eyebrow">YOUR JOURNEYS</span><h1>Everywhere you’re going.</h1><p>${session ? `Signed in as ${escapeHtml(session.user.email)}` : 'Your saved and upcoming reservations, all in one place.'}</p></div><a class="button-dark" href="stays.html">Plan a trip <i class="bi bi-arrow-right"></i></a></section><section class="trip-list">${list}</section>${session ? '<button class="text-button" id="sign-out" type="button">Sign out</button>' : '<p class="signin-prompt">Have an account? <a href="login.html">Sign in to sync your trips</a></p>'}</main>`;
 }
@@ -278,6 +281,16 @@ function bindEvents() {
     await signOut();
     location.href = 'index.html';
   });
+  document.querySelectorAll('[data-cancel-booking]').forEach((button) => button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      await cancelBooking(button.dataset.cancelBooking);
+      await render();
+    } catch (error) {
+      button.disabled = false;
+      button.title = error.message;
+    }
+  }));
   document.querySelector('#hotel-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = event.currentTarget;

@@ -96,6 +96,26 @@ export async function fetchBookings() {
   return data;
 }
 
+export async function cancelBooking(bookingId) {
+  if (!supabase) {
+    const saved = JSON.parse(localStorage.getItem('stayfinder-bookings') || '[]');
+    const booking = saved.find((item) => item.id === bookingId);
+    if (!booking) throw new Error('Reservation not found.');
+    booking.status = 'cancelled';
+    localStorage.setItem('stayfinder-bookings', JSON.stringify(saved));
+    return booking;
+  }
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .update({ status: 'cancelled' })
+    .eq('id', bookingId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function fetchAdminRole(userId) {
   if (!supabase) return false;
   const { data, error } = await supabase
