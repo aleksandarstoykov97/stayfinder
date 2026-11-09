@@ -56,6 +56,7 @@ To enable Supabase:
 5. Promote a trusted account by assigning its `admin` role. The admin form uploads a property image and creates its first room before publishing the property.
 
 Run `npm run build` to validate all page entries and create the static deployment bundle in `dist/`.
+Run `npm test` for the booking date and total calculation unit tests.
 
 ## Key files
 

@@ -2,6 +2,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '../app.css';
 import { demoStays, getDemoStay } from './data.js';
+import { calculateStayTotal, countStayNights } from './booking-utils.js';
 import {
   createBooking,
   fetchAdminRole,
@@ -129,12 +130,9 @@ function updateBookingTotal() {
   if (!form) return;
   const checkout = form.elements.check_out;
   checkout.min = form.elements.check_in.value;
-  const checkIn = new Date(`${form.elements.check_in.value}T00:00:00`);
-  const checkOut = new Date(`${form.elements.check_out.value}T00:00:00`);
-  const nightDifference = Math.ceil((checkOut - checkIn) / 86400000);
-  const isValidStay = Number.isFinite(nightDifference) && nightDifference > 0;
-  const nights = isValidStay ? nightDifference : 0;
-  const total = nights * Number(form.elements.price_per_night.value);
+  const nights = countStayNights(form.elements.check_in.value, form.elements.check_out.value);
+  const isValidStay = nights > 0;
+  const total = calculateStayTotal(form.elements.price_per_night.value, nights);
   document.querySelector('#night-count').textContent = isValidStay ? `${nights} night${nights === 1 ? '' : 's'}` : 'Select valid dates';
   document.querySelector('#total-price').textContent = money(total);
   document.querySelector('#grand-total').textContent = money(total);
