@@ -37,6 +37,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .icon-link { color: var(--ink); font-size: 18px; }
 .sign-in-link { display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 700; }
 .sign-in-link i { color: var(--green); }
+.sign-out-button { padding: 7px 0; border: 0; background: transparent; color: var(--ink); font-size: 13px; font-weight: 700; }
 .menu-toggle { display: none; border: 0; background: none; color: var(--ink); font-size: 24px; }
 
 .home-hero { position: relative; display: flex; min-height: min(660px, 68vw); min-height: clamp(470px, 57vw, 660px); align-items: center; overflow: hidden; background: #34372d; color: white; }

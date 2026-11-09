@@ -25,8 +25,11 @@ const today = new Date().toISOString().slice(0, 10);
 const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
 let stays = demoStays;
 
-function nav() {
-  return `<header class="site-header"><a class="wordmark" href="index.html"><span class="wordmark-icon"><i class="bi bi-compass-fill"></i></span>stayfinder<span class="wordmark-dot">.</span></a><nav class="main-nav" aria-label="Main navigation"><a class="${page === 'stays' ? 'active' : ''}" href="stays.html">Find a stay</a><a class="${page === 'trips' ? 'active' : ''}" href="trips.html">My trips</a><a class="${page === 'admin' ? 'active' : ''}" href="admin.html">Host tools</a></nav><div class="header-actions"><a class="icon-link" href="saved.html" aria-label="Saved stays"><i class="bi bi-heart"></i></a><a class="sign-in-link" href="login.html">Sign in <i class="bi bi-arrow-up-right"></i></a><button class="menu-toggle" type="button" aria-label="Open menu"><i class="bi bi-list"></i></button></div></header>`;
+function nav(session) {
+  const accountAction = session
+    ? `<button class="sign-out-button" type="button" data-sign-out>Sign out</button>`
+    : '<a class="sign-in-link" href="login.html">Sign in <i class="bi bi-arrow-up-right"></i></a>';
+  return `<header class="site-header"><a class="wordmark" href="index.html"><span class="wordmark-icon"><i class="bi bi-compass-fill"></i></span>stayfinder<span class="wordmark-dot">.</span></a><nav class="main-nav" aria-label="Main navigation"><a class="${page === 'stays' ? 'active' : ''}" href="stays.html">Find a stay</a><a class="${page === 'trips' ? 'active' : ''}" href="trips.html">My trips</a><a class="${page === 'admin' ? 'active' : ''}" href="admin.html">Host tools</a></nav><div class="header-actions"><a class="icon-link" href="saved.html" aria-label="Saved stays"><i class="bi bi-heart"></i></a>${accountAction}<button class="menu-toggle" type="button" aria-label="Open menu"><i class="bi bi-list"></i></button></div></header>`;
 }
 
 function footer() {
@@ -76,8 +79,7 @@ function bookingView(stay) {
   return `<main class="page-main narrow-main"><a class="back-link" href="property.html?id=${encodeURIComponent(stay.id)}"><i class="bi bi-arrow-left"></i> Back to stay</a><div class="booking-title"><span class="eyebrow">ONE LAST THING</span><h1>Make it yours.</h1><p>Your next good story starts here.</p></div><div class="checkout-layout"><form id="booking-form" class="checkout-form"><input type="hidden" name="hotel_id" value="${escapeHtml(stay.id)}"><input type="hidden" name="room_id" value="${escapeHtml(room.id)}"><input type="hidden" name="hotel_name" value="${escapeHtml(stay.name)}"><input type="hidden" name="room_name" value="${escapeHtml(room.name)}"><input type="hidden" name="price_per_night" value="${room.price}"><h2>Guest details</h2><div class="form-row"><label>First name<input name="first_name" required autocomplete="given-name" placeholder="Alex"></label><label>Last name<input name="last_name" required autocomplete="family-name" placeholder="Morgan"></label></div><label>Email address<input name="email" type="email" required autocomplete="email" placeholder="alex@example.com"></label><div class="form-row"><label>Check in<input name="check_in" type="date" min="${today}" value="${escapeHtml(params.get('checkin') || today)}" required></label><label>Check out<input name="check_out" type="date" min="${escapeHtml(params.get('checkin') || today)}" value="${escapeHtml(params.get('checkout') || nextWeek)}" required></label></div><label>Guests<select name="guests">${[1, 2, 3, 4].map((guestCount) => `<option value="${guestCount}" ${Number(params.get('guests') || 2) === guestCount ? 'selected' : ''}>${guestCount} ${guestCount === 1 ? 'guest' : 'guests'}</option>`).join('')}</select></label><label class="notes-label">Anything we should know? <span>Optional</span><textarea name="notes" rows="3" placeholder="Arrival time, accessibility needs..."></textarea></label><p class="form-notice" id="booking-message" role="status"></p><button class="button-dark submit-button" type="submit">Confirm reservation <i class="bi bi-arrow-right"></i></button><p class="form-footnote">You won’t be charged yet. Payment collection can be added after Supabase is configured.</p></form><aside class="booking-summary"><img src="${escapeHtml(stay.image)}" alt="${escapeHtml(stay.name)}"><div class="summary-copy"><span class="eyebrow">${escapeHtml(stay.category)}</span><h3>${escapeHtml(stay.name)}</h3><p>${escapeHtml(stay.city)} · ${escapeHtml(room.name)}</p><div class="summary-price"><span>${money(room.price)} × <b id="night-count">7 nights</b></span><strong id="total-price">${money(room.price * 7)}</strong></div><div class="summary-total"><span>Total</span><strong id="grand-total">${money(room.price * 7)}</strong></div></div></aside></div></main>`;
 }
 
-async function tripsView() {
-  const session = await getSession();
+async function tripsView(session) {
   const bookings = await fetchBookings();
   const list = bookings.length ? bookings.map((booking) => {
     const hotel = booking.rooms?.hotels;
@@ -99,8 +101,7 @@ function loginView() {
   return `<main class="auth-layout"><section class="auth-image"><div><span class="eyebrow light-eyebrow">A PLACE TO BEGIN</span><h1>Go somewhere<br><em>good.</em></h1></div><span>Casa Verde Lisboa · Príncipe Real</span></section><section class="auth-panel"><span class="eyebrow">WELCOME TO STAYFINDER</span><h2>Make yourself at home.</h2><p>Sign in or create an account to keep your trips close.</p><div class="auth-tabs" role="tablist"><button class="active" type="button" data-auth-mode="signin">Sign in</button><button type="button" data-auth-mode="signup">Create account</button></div><form id="auth-form"><label class="signup-only hidden">Full name<input name="full_name" autocomplete="name" placeholder="Your name"></label><label>Email address<input name="email" type="email" required autocomplete="email" placeholder="you@example.com"></label><label>Password<input name="password" type="password" required minlength="8" autocomplete="current-password" placeholder="At least 8 characters"></label><p class="form-notice" id="auth-message" role="status"></p><button class="button-dark submit-button" type="submit"><span id="auth-submit-label">Sign in</span><i class="bi bi-arrow-right"></i></button></form><p class="auth-note">${isSupabaseConfigured ? 'Your account is protected by Supabase authentication.' : 'Demo browsing is enabled. Connect Supabase to activate accounts.'}</p></section></main>`;
 }
 
-async function adminView() {
-  const session = await getSession();
+async function adminView(session) {
   if (!session) return `<main class="page-main admin-gate"><span class="eyebrow">HOST TOOLS</span><h1>Manage the collection.</h1><p>Sign in with an administrator account to add stays and manage listings.</p><a class="button-dark" href="login.html">Sign in <i class="bi bi-arrow-right"></i></a></main>`;
   const isAdmin = await fetchAdminRole(session.user.id);
   if (!isAdmin) return `<main class="page-main admin-gate"><span class="eyebrow">HOST TOOLS</span><h1>Access is restricted.</h1><p>This account does not have the administrator role.</p><a class="text-link" href="index.html">Return to Stayfinder <i class="bi bi-arrow-up-right"></i></a></main>`;
@@ -156,6 +157,7 @@ function updateBookingTotal() {
 }
 
 async function render() {
+  const session = await getSession();
   if (isSupabaseConfigured) {
     try {
       const remoteStays = await fetchStays();
@@ -170,13 +172,13 @@ async function render() {
   else if (page === 'stays') content = staysView();
   else if (page === 'property') content = propertyView(stays.find((stay) => stay.id === new URLSearchParams(location.search).get('id')) || getDemoStay(new URLSearchParams(location.search).get('id')));
   else if (page === 'booking') content = bookingView(stays.find((stay) => stay.id === new URLSearchParams(location.search).get('hotel')) || getDemoStay(new URLSearchParams(location.search).get('hotel')));
-  else if (page === 'trips') content = await tripsView();
+  else if (page === 'trips') content = await tripsView(session);
   else if (page === 'saved') content = savedView();
   else if (page === 'login') content = loginView();
-  else if (page === 'admin') content = await adminView();
+  else if (page === 'admin') content = await adminView(session);
   else content = homeView();
 
-  root.innerHTML = `${nav()}${content}${footer()}`;
+  root.innerHTML = `${nav(session)}${content}${footer()}`;
   if (page === 'stays') renderResults();
   if (page === 'saved') renderSaved();
   if (page === 'booking') updateBookingTotal();
@@ -277,10 +279,10 @@ function bindEvents() {
       notice.className = 'form-notice error-message';
     }
   });
-  document.querySelector('#sign-out')?.addEventListener('click', async () => {
+  document.querySelectorAll('[data-sign-out]').forEach((button) => button.addEventListener('click', async () => {
     await signOut();
     location.href = 'index.html';
-  });
+  }));
   document.querySelectorAll('[data-cancel-booking]').forEach((button) => button.addEventListener('click', async () => {
     button.disabled = true;
     try {
