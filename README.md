@@ -1,6 +1,6 @@
 # Stayfinder
 
-Stayfinder is a responsive hotel discovery and booking app. Guests can browse independent stays, filter by destination, save favorites, make reservations, and see their trips. Administrators can upload property cover photos and manage listings.
+Stayfinder is a responsive hotel discovery and booking app. Guests can browse independent stays, filter by destination, save favorites, make/cancel reservations, and see their trips. Administrators can upload property cover photos and manage listings.
 
 The app is built with HTML, CSS, vanilla JavaScript, Bootstrap, Vite, and Supabase. Without Supabase credentials it runs in demo mode with sample stays and browser-local reservations. Authentication, database-backed reservations, admin tools, and uploads become active after connecting a Supabase project.
 
@@ -90,6 +90,11 @@ Run `npm test` for the booking date and total calculation unit tests.
 
 ## Deployment and demo access
 
-The live site is [stayfinder-aleksandarstoykov97.netlify.app](https://stayfinder-aleksandarstoykov97.netlify.app/). The repository includes `netlify.toml` with the Vite build command and `dist/` publish directory. To deploy from a local machine, install the Netlify CLI, authenticate with `netlify login`, link or create a site with `netlify init`, then run `netlify deploy --prod`. Alternatively, connect this GitHub repository in the Netlify dashboard; Netlify will read the build settings from `netlify.toml`.
+The live site is [stayfinder-aleksandarstoykov97.netlify.app](https://stayfinder-aleksandarstoykov97.netlify.app/). It is connected to Supabase project `vtewyrmbsoegicxdzuvl` in Frankfurt. Netlify's production environment has the public project URL and publishable key configured. The repository includes `netlify.toml` with the Vite build command and `dist/` publish directory. To deploy from a local machine, authenticate with `netlify login`, then run `netlify deploy --prod` from this repository.
 
-Set the two `VITE_SUPABASE_*` variables in Netlify's environment settings and apply the database migration before enabling live accounts. Without those settings, the published frontend runs in demo mode. No sample account is included because a real Supabase user must be provisioned.
+Demo guest credentials:
+
+- Email: `demo@stayfinder.example`
+- Password: `StayfinderDemo2026!`
+
+This account has only the `guest` role. It can test sign-in, bookings, cancellation, and its own trip list. Do not assign the public demo account the `admin` role. To test the admin panel, sign up using an email you control, confirm the email, then run the admin role SQL above for that address in the Supabase SQL Editor. Never put a service-role key or an admin password in this repository.
