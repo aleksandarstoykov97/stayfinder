@@ -27,3 +27,10 @@ export function hasBookingConflict(candidate, bookings) {
       && requestedStart < bookedEnd && requestedEnd > bookedStart;
   });
 }
+
+export function canAccommodateGuests(guestCount, roomCapacity) {
+  const guests = Number(guestCount);
+  const capacity = Number(roomCapacity);
+  return Number.isInteger(guests) && Number.isInteger(capacity)
+    && guests > 0 && capacity > 0 && guests <= capacity;
+}

@@ -2,7 +2,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import '../app.css';
 import { demoStays, getDemoStay } from './data.js';
-import { calculateStayTotal, countStayNights } from './booking-utils.js';
+import { calculateStayTotal, canAccommodateGuests, countStayNights } from './booking-utils.js';
 import { validateHotelImage } from './storage-utils.js';
 import {
   createBooking,
@@ -77,7 +77,9 @@ function propertyView(stay) {
 function bookingView(stay) {
   const params = new URLSearchParams(location.search);
   const room = stay.rooms.find((item) => item.id === params.get('room')) || stay.rooms[0];
-  return `<main class="page-main narrow-main"><a class="back-link" href="property.html?id=${encodeURIComponent(stay.id)}"><i class="bi bi-arrow-left"></i> Back to stay</a><div class="booking-title"><span class="eyebrow">ONE LAST THING</span><h1>Make it yours.</h1><p>Your next good story starts here.</p></div><div class="checkout-layout"><form id="booking-form" class="checkout-form"><input type="hidden" name="hotel_id" value="${escapeHtml(stay.id)}"><input type="hidden" name="room_id" value="${escapeHtml(room.id)}"><input type="hidden" name="hotel_name" value="${escapeHtml(stay.name)}"><input type="hidden" name="room_name" value="${escapeHtml(room.name)}"><input type="hidden" name="price_per_night" value="${room.price}"><h2>Guest details</h2><div class="form-row"><label>First name<input name="first_name" required autocomplete="given-name" placeholder="Alex"></label><label>Last name<input name="last_name" required autocomplete="family-name" placeholder="Morgan"></label></div><label>Email address<input name="email" type="email" required autocomplete="email" placeholder="alex@example.com"></label><div class="form-row"><label>Check in<input name="check_in" type="date" min="${today}" value="${escapeHtml(params.get('checkin') || today)}" required></label><label>Check out<input name="check_out" type="date" min="${escapeHtml(params.get('checkin') || today)}" value="${escapeHtml(params.get('checkout') || nextWeek)}" required></label></div><label>Guests<select name="guests">${[1, 2, 3, 4].map((guestCount) => `<option value="${guestCount}" ${Number(params.get('guests') || 2) === guestCount ? 'selected' : ''}>${guestCount} ${guestCount === 1 ? 'guest' : 'guests'}</option>`).join('')}</select></label><label class="notes-label">Anything we should know? <span>Optional</span><textarea name="notes" rows="3" placeholder="Arrival time, accessibility needs..."></textarea></label><p class="form-notice" id="booking-message" role="status"></p><button class="button-dark submit-button" type="submit">Confirm reservation <i class="bi bi-arrow-right"></i></button><p class="form-footnote">You won’t be charged yet. Payment collection can be added after Supabase is configured.</p></form><aside class="booking-summary"><img src="${escapeHtml(stay.image)}" alt="${escapeHtml(stay.name)}"><div class="summary-copy"><span class="eyebrow">${escapeHtml(stay.category)}</span><h3>${escapeHtml(stay.name)}</h3><p>${escapeHtml(stay.city)} · ${escapeHtml(room.name)}</p><div class="summary-price"><span>${money(room.price)} × <b id="night-count">7 nights</b></span><strong id="total-price">${money(room.price * 7)}</strong></div><div class="summary-total"><span>Total</span><strong id="grand-total">${money(room.price * 7)}</strong></div></div></aside></div></main>`;
+  const roomCapacity = Math.min(4, room.guests || 4);
+  const requestedGuests = Number(params.get('guests') || 2);
+  return `<main class="page-main narrow-main"><a class="back-link" href="property.html?id=${encodeURIComponent(stay.id)}"><i class="bi bi-arrow-left"></i> Back to stay</a><div class="booking-title"><span class="eyebrow">ONE LAST THING</span><h1>Make it yours.</h1><p>Your next good story starts here.</p></div><div class="checkout-layout"><form id="booking-form" class="checkout-form"><input type="hidden" name="hotel_id" value="${escapeHtml(stay.id)}"><input type="hidden" name="room_id" value="${escapeHtml(room.id)}"><input type="hidden" name="hotel_name" value="${escapeHtml(stay.name)}"><input type="hidden" name="room_name" value="${escapeHtml(room.name)}"><input type="hidden" name="price_per_night" value="${room.price}"><input type="hidden" name="room_capacity" value="${roomCapacity}"><h2>Guest details</h2><div class="form-row"><label>First name<input name="first_name" required autocomplete="given-name" placeholder="Alex"></label><label>Last name<input name="last_name" required autocomplete="family-name" placeholder="Morgan"></label></div><label>Email address<input name="email" type="email" required autocomplete="email" placeholder="alex@example.com"></label><div class="form-row"><label>Check in<input name="check_in" type="date" min="${today}" value="${escapeHtml(params.get('checkin') || today)}" required></label><label>Check out<input name="check_out" type="date" min="${escapeHtml(params.get('checkin') || today)}" value="${escapeHtml(params.get('checkout') || nextWeek)}" required></label></div><label>Guests<select name="guests">${Array.from({ length: roomCapacity }, (_, index) => index + 1).map((guestCount) => `<option value="${guestCount}" ${Math.min(requestedGuests, roomCapacity) === guestCount ? 'selected' : ''}>${guestCount} ${guestCount === 1 ? 'guest' : 'guests'}</option>`).join('')}</select></label><p class="form-notice" id="booking-message" role="status"></p><label class="notes-label">Anything we should know? <span>Optional</span><textarea name="notes" rows="3" placeholder="Arrival time, accessibility needs..."></textarea></label><button class="button-dark submit-button" type="submit">Confirm reservation <i class="bi bi-arrow-right"></i></button><p class="form-footnote">You won’t be charged yet. Payment collection can be added after Supabase is configured.</p></form><aside class="booking-summary"><img src="${escapeHtml(stay.image)}" alt="${escapeHtml(stay.name)}"><div class="summary-copy"><span class="eyebrow">${escapeHtml(stay.category)}</span><h3>${escapeHtml(stay.name)}</h3><p>${escapeHtml(stay.city)} · ${escapeHtml(room.name)}</p><div class="summary-price"><span>${money(room.price)} × <b id="night-count">7 nights</b></span><strong id="total-price">${money(room.price * 7)}</strong></div><div class="summary-total"><span>Total</span><strong id="grand-total">${money(room.price * 7)}</strong></div></div></aside></div></main>`;
 }
 
 async function tripsView(session) {
@@ -227,6 +229,12 @@ function bindEvents() {
     const form = event.currentTarget;
     const notice = document.querySelector('#booking-message');
     const { total, isValidStay } = updateBookingTotal();
+    const guestCount = Number(form.elements.guests.value);
+    if (!canAccommodateGuests(guestCount, form.elements.room_capacity.value)) {
+      notice.textContent = 'This room does not have capacity for that many guests.';
+      notice.className = 'form-notice error-message';
+      return;
+    }
     if (!isValidStay) {
       notice.textContent = 'Check-out must be after check-in.';
       notice.className = 'form-notice error-message';
@@ -238,7 +246,7 @@ function bindEvents() {
       return;
     }
     const booking = Object.fromEntries(new FormData(form));
-    booking.guests = Number(booking.guests);
+    booking.guests = guestCount;
     booking.total_price = total;
     delete booking.first_name;
     delete booking.last_name;

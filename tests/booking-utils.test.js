@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateStayTotal, countStayNights, hasBookingConflict } from '../src/js/booking-utils.js';
+import { calculateStayTotal, canAccommodateGuests, countStayNights, hasBookingConflict } from '../src/js/booking-utils.js';
 
 test('counts nights between checkout dates, excluding checkout day', () => {
   assert.equal(countStayNights('2026-11-09', '2026-11-16'), 7);
@@ -47,4 +47,11 @@ test('allows back-to-back bookings and bookings for different rooms', () => {
 test('ignores cancelled reservations when checking availability', () => {
   const existing = [{ room_id: 'room-1', check_in: '2026-11-10', check_out: '2026-11-14', status: 'cancelled' }];
   assert.equal(hasBookingConflict({ room_id: 'room-1', check_in: '2026-11-12', check_out: '2026-11-13' }, existing), false);
+});
+
+test('checks room capacity without accepting invalid guest counts', () => {
+  assert.equal(canAccommodateGuests('2', 2), true);
+  assert.equal(canAccommodateGuests(3, 2), false);
+  assert.equal(canAccommodateGuests(0, 2), false);
+  assert.equal(canAccommodateGuests(1.5, 2), false);
 });
