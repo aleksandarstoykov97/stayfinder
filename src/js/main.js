@@ -3,6 +3,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import '../app.css';
 import { demoStays, getDemoStay } from './data.js';
 import { calculateStayTotal, countStayNights } from './booking-utils.js';
+import { validateHotelImage } from './storage-utils.js';
 import {
   createBooking,
   cancelBooking,
@@ -299,6 +300,12 @@ function bindEvents() {
     const notice = document.querySelector('#admin-message');
     const fields = Object.fromEntries(new FormData(form));
     const file = fields.cover;
+    const fileError = validateHotelImage(file);
+    if (fileError) {
+      notice.textContent = fileError;
+      notice.className = 'form-notice error-message';
+      return;
+    }
     try {
       if (!supabase) throw new Error('Supabase is not configured.');
       const path = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`;
