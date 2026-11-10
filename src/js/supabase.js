@@ -12,13 +12,17 @@ export async function fetchStays() {
 
   const { data, error } = await supabase
     .from('hotels')
-    .select('*, rooms(id, name, max_guests, price_per_night)')
+    .select('*, rooms(id, name, max_guests, price_per_night), reviews(rating)')
     .eq('is_published', true)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
   return data.filter((hotel) => hotel.rooms.length > 0).map((hotel) => ({
     ...hotel,
+    rating: hotel.reviews.length
+      ? hotel.reviews.reduce((total, review) => total + review.rating, 0) / hotel.reviews.length
+      : null,
+    reviews: hotel.reviews.length,
     price: Math.min(...hotel.rooms.map((room) => Number(room.price_per_night))),
     image: hotel.cover_image_url,
     neighborhood: hotel.neighborhood || hotel.city,
