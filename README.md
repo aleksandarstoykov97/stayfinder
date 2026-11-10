@@ -98,3 +98,10 @@ Demo guest credentials:
 - Password: `StayfinderDemo2026!`
 
 This pre-confirmed account has only the `guest` role. It can test sign-in, bookings, cancellation, and its own trip list. New registrations must confirm their email before signing in. Do not assign the public demo account the `admin` role. To test the admin panel, sign up using an email you control, confirm the email, then run the admin role SQL above for that address in the Supabase SQL Editor. Never put a service-role key or an admin password in this repository.
+
+Administrator assessment account:
+
+- Email: `demo-admin@stayfinder.example`
+- Password: `StayfinderAdmin2026!`
+
+This account has the `admin` role so the reviewer can inspect host tools and Storage uploads. It is intentionally a public assessment credential; use only sample data, then rotate its password or remove its admin role after grading. Do not reuse this password for any personal account.
