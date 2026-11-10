@@ -39,7 +39,7 @@ RLS restricts profile, role, and booking access. Hotel reads are public only for
 
 ## Local setup
 
-Requirements: Node.js 20.19+ or 22.12+, npm, and optionally a Supabase project.
+Requirements: Node.js 20.19+ or 22.12+, npm. Docker Desktop is required only for the local Supabase stack.
 
 ```sh
 npm install
@@ -48,13 +48,29 @@ npm run dev
 
 Open the local URL printed by Vite. Demo stays and local-only bookings work without Supabase.
 
-To enable Supabase:
+To start the local Supabase backend, keep Docker Desktop running and use a second terminal:
 
-1. Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from the Supabase project settings. Never use a service-role key in the browser.
-2. Install the Supabase CLI, authenticate, then link the project with `supabase link --project-ref <project-ref>`.
-3. If the remote database already has schema changes, first sync its history with `supabase db pull`. For a new database, apply this repository's migration with `supabase db push`.
-4. Create an admin user through Supabase Auth, then assign its `admin` role through the Supabase SQL editor. Do not expose the service-role key to the app.
-5. Promote a trusted account by assigning its `admin` role. The admin form uploads a property image and creates its first room before publishing the property.
+```sh
+npx supabase start
+npx supabase db reset
+```
+
+The reset applies migrations and seeds three sample hotels with rooms. Copy the local API URL and anon/publishable key shown by `supabase start` into `.env.local` as `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, then restart Vite. Never use a service-role key in browser code.
+
+To connect a hosted Supabase project:
+
+1. Create a Supabase project and copy its project URL and anon/publishable key into `.env.local`.
+2. Authenticate the CLI with `npx supabase login`, then link with `npx supabase link --project-ref <project-ref>`.
+3. If the hosted database already contains schema changes, sync its history first with `npx supabase db pull`. For a new project, apply this repository's migration with `npx supabase db push`.
+4. Create a user through the app or Supabase Auth, then promote the trusted account in the SQL editor:
+
+```sql
+insert into public.user_roles (user_id, role)
+select id, 'admin' from auth.users where email = 'admin@example.com'
+on conflict do nothing;
+```
+
+The admin form uploads a property image and first room before publishing. The browser only needs the public anon/publishable key; never put the service-role key in `.env.local` or Netlify frontend variables.
 
 Run `npm run build` to validate all page entries and create the static deployment bundle in `dist/`.
 Run `npm test` for the booking date and total calculation unit tests.
@@ -67,6 +83,8 @@ Run `npm test` for the booking date and total calculation unit tests.
 - `src/js/supabase.js` — Supabase client, Auth, booking, and listing services
 - `src/app.css` — shared responsive design system
 - `supabase/migrations/` — versioned database schema and policies
+- `supabase/seed.sql` — repeatable sample hotel/room records for local resets
+- `supabase/config.toml` — local Supabase services, Auth URLs, and Storage bucket
 - `.github/copilot-instructions.md` — project-wide coding and security guidance
 - `.env.example` — required public Supabase configuration names
 
